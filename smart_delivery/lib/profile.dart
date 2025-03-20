@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'dashboard.dart';
 import 'notification.dart';
-import 'history.dart';
+// import 'history.dart';
+import 'global.dart';
 import 'main.dart';
 
 class Profile extends StatefulWidget {
   // const DashboardUI({super.key, required this.title});
+  // final String boxId;
+  // final String personName;
+  // final String mobileNumber;
+
+  // const Profile.withParameters({required this.boxId, required this.personName, required this.mobileNumber});
+
   const Profile({super.key});
 
   //final String title;
@@ -16,37 +24,8 @@ class Profile extends StatefulWidget {
 class _ProfilePageState extends State<Profile> {
   
   bool isDarkMode = false;
-  bool isLocked = true;
-  bool objectDetected = false;
-  double objectWeight = 0.0;
   Color backgroundColor = Color(0xFFAEB8FE);
   Color textColor = Color(0xFf000000);
-
-  void toggleLock() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirm"),
-        content: Text("Do you want to ${isLocked ? 'open' : 'close'} the lock?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                isLocked = !isLocked;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Yes"),
-          ),
-        ],
-      ),
-    );
-  }
-
 
   @override
  Widget build(BuildContext context) {
@@ -85,20 +64,25 @@ class _ProfilePageState extends State<Profile> {
               child: Text("Menu", style: TextStyle(fontSize: 24)),
             ),
             ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text("Profile"),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text("History"),
+              leading: const Icon(Icons.dashboard),
+              title: const Text("DashBoard"),
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HistoryPage()),
+                  MaterialPageRoute(builder: (context) => const DashboardUI()),
                 );
               },
             ),
+            // ListTile(
+            //   leading: const Icon(Icons.history),
+            //   title: const Text("History"),
+            //   onTap: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const HistoryPage()),
+            //     );
+            //   },
+            // ),
             ListTile(
               leading: const Icon(Icons.notifications),
               title: const Text("Notifications"),
@@ -138,12 +122,11 @@ class _ProfilePageState extends State<Profile> {
 
             // User Info
            Text(
-              "John Doe",
+              UserData().personName,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
             ),
             const SizedBox(height: 5),
-            Text("john.doe@example.com", style: TextStyle(fontSize: 16, color: textColor)),
-            Text("+123 456 7890", style: TextStyle(fontSize: 16, color: textColor)),
+            Text(UserData().mobileNumber, style: TextStyle(fontSize: 16, color: textColor)),
             const SizedBox(height: 20),
 
             // Device Info
@@ -154,11 +137,9 @@ class _ProfilePageState extends State<Profile> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
             ),
             const SizedBox(height: 10),
-            _buildInfoRow("Device ID", "1234-5678-ABCD"),
-            _buildInfoRow("Person1", "Name of person 1"),
-            _buildInfoRow("Person2", "Name of person 2"),
-            _buildInfoRow("Person3", "Name of person 3"),
-            _buildInfoRow("Person4", "Name of person 4"),
+            _buildInfoRow("Device ID", UserData().boxId),
+            _buildInfoRow("Person1", UserData().personName),
+            _buildInfoRow("Person2", "-"),
             const SizedBox(height: 20),
 
             // Edit Profile Button

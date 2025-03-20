@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:async';
+import 'package:mqtt_client/mqtt_client.dart';
 import 'profile.dart';
 import 'notification.dart';
-import 'history.dart';
+// import 'history.dart';
 import 'main.dart';
+import './Services/mqtt_services.dart';
 
 class DashboardUI extends StatefulWidget {
   // const DashboardUI({super.key, required this.title});
@@ -16,19 +20,48 @@ class DashboardUI extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardUI> {
   
+  bool isButtonDisabled = false;
   bool isDarkMode = false;
   bool isLocked = true;
   bool objectDetected = false;
   double objectWeight = 0.0;
+  String doorStatus = "Closed";
+  String lockStatus = "Locked";
+  String parcelStatus = "Not Placed";
+  String camURL = "";
   Color backgroundColor = Color(0xFFAEB8FE);
   Color textColor = Color(0xFf000000);
+
+  final TextEditingController URLController = TextEditingController();
+
+  late WebViewController camURLController;
+
+  MqttService newclient = MqttService();
+
+  @override
+  void initState() {
+    super.initState();
+    camURLController = WebViewController()
+    ..setJavaScriptMode(JavaScriptMode.disabled)
+    ..loadRequest(Uri.parse("about:blank"));
+    startListening(); // Start listening when the screen loads
+  }
+
+  void loadUrl() {
+    camURL = URLController.text;
+    if(camURL != ""){
+      setState(() {
+      camURLController.loadRequest(Uri.parse(camURL)); // Load the URL in WebView
+    });
+    }
+  }
 
   void toggleLock() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm"),
-        content: Text("Do you want to ${isLocked ? 'open' : 'close'} the lock?"),
+        content: Text("Do you want to open the lock?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -37,9 +70,15 @@ class _DashboardPageState extends State<DashboardUI> {
           TextButton(
             onPressed: () {
               setState(() {
-                isLocked = !isLocked;
+                isLocked =false;
+                doorStatus = "Open";
               });
               Navigator.pop(context);
+              newclient.publishMessage("servo_bool","Open Lock");
+              // newclient.publishMessage("Ultrasonic_data","Placed");
+              ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Door Opening...")),
+                  );
             },
             child: const Text("Yes"),
           ),
@@ -48,6 +87,98 @@ class _DashboardPageState extends State<DashboardUI> {
     );
   }
 
+  void startListening() {
+  Timer.periodic(Duration(seconds:5), (timer) {
+    newclient.subscibe('Ultrasonic_data');
+    newclient.subscibe('servo_stat');
+    newclient.subscibe('MagCon_data');
+    // String? message;
+    // String? topics;
+      newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
+      final MqttPublishMessage recMessage = messages![0].payload as MqttPublishMessage;
+      String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
+      String topics = messages![0].topic;
+      print('Received message: $message from topic: $topics');
+      if (topics == "servo_stat" && message == "Closed") {
+      setState(() {
+        // isLocked = true;
+        isButtonDisabled = false;
+        doorStatus = "Closed";
+      });
+    }
+    if (topics == "servo_stat" && message == "Open") {
+      setState(() {
+        // isLocked = false;
+        isButtonDisabled = true;
+        doorStatus = "Open";
+      });
+    }
+    if (topics == "MagCon_data" && message == "Locked") {
+      setState(() {
+        isLocked = true;
+        // isButtonDisabled = false;
+        lockStatus = "Locked";
+      });
+    }
+    if (topics == "MagCon_data" && message == "Unlocked") {
+      setState(() {
+        isLocked = false;
+        // isButtonDisabled = true;
+        lockStatus = "Unlocked";
+      });
+    }
+    if (topics == "Ultrasonic_data" && message == "Placed") {
+      setState(() {
+        parcelStatus = "Placed";
+      });
+      print(parcelStatus);
+      Future.delayed(Duration(seconds: 10), () {
+      setState(() {
+        parcelStatus = "Not Placed"; // Enable the button
+      });
+    });
+    }
+      });
+    // String doorMessage = newclient.subscibe("servo_bool");
+    // String parcelMessage = newclient.subscibe("Ultrasonic_data");
+    // if (topics == "servo_bool" && message == "Lock closed") {
+    //   setState(() {
+    //     isLocked = true;
+    //     doorStatus = "Closed";
+    //   });
+    // }
+    // else
+    // {
+    //   print("Some error");
+    // }
+    // if (topics == "Ultrasonic_data" && message == "Placed") {
+    //   setState(() {
+    //     parcelStatus = "Placed";
+    //   });
+    //   print(parcelStatus);
+    // //   Future.delayed(Duration(seconds: 5), () {
+    // //   setState(() {
+    // //     parcelStatus = "Not Placed"; // Enable the button
+    // //   });
+    // // });
+    // }
+    // else
+    // {
+    //   print("Some error");
+    // }
+  });
+}
+
+  // while(true){ {
+  //   String message = newclient.subscibe("servo_bool");
+  //   if(message == "Lock closed")
+  //   {
+  //     setState(() {
+  //       isLocked = true;
+  //       doorStatus = "Closed";
+  //     });
+  //   }
+  // }
 
   @override
  Widget build(BuildContext context) {
@@ -95,16 +226,16 @@ class _DashboardPageState extends State<DashboardUI> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text("History"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HistoryPage()),
-                );
-              },
-            ),
+            // ListTile(
+            //   leading: const Icon(Icons.history),
+            //   title: const Text("History"),
+            //   onTap: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const HistoryPage()),
+            //     );
+            //   },
+            // ),
             ListTile(
               leading: const Icon(Icons.notifications),
               title: const Text("Notifications"),
@@ -129,41 +260,85 @@ class _DashboardPageState extends State<DashboardUI> {
         ),
       ),
       backgroundColor: backgroundColor,
-      body: Padding(
+      body: SingleChildScrollView(
+      child:Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            ElevatedButton(
-              onPressed: toggleLock,
-              child: Text(isLocked ? "Open Lock" : "Close Lock"),
-            ),
             const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: isButtonDisabled ? null : toggleLock,
+              style: ElevatedButton.styleFrom(
+              minimumSize: Size(200, 50), // Width: 200, Height: 50
+              ),  
+              child: Text("Open Lock", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
+            ),
+            const SizedBox(height: 40),
             Text("Box Status", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
-            const SizedBox(height: 10),
-            Expanded(
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 200,
               child: GridView.count(
                 crossAxisCount: 2,
                 children: [
                   _buildStatusCard(
                     icon: isLocked ? Icons.lock : Icons.lock_open,
                     label: "Lock Status",
-                    value: isLocked ? "Closed" : "Open",
+                    value: "Door : $doorStatus \n Latch : $lockStatus",
                   ),
                   _buildStatusCard(
                     icon: Icons.inbox,
                     label: "Object Detection",
-                    value: objectDetected ? "Detected" : "Not Detected",
+                    value: parcelStatus,
                   ),
-                  _buildStatusCard(
-                    icon: Icons.scale,
-                    label: "Object Weight",
-                    value: objectWeight == 0.0 ? "0 Kg" : "$objectWeight Kg",
-                  ),
+                  // _buildStatusCard(
+                  //   icon: Icons.scale,
+                  //   label: "Object Weight",
+                  //   value: objectWeight == 0.0 ? "0 Kg" : "$objectWeight Kg",
+                  // ),
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+            Column(
+              children: [
+               Text("Cam Module URL : ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+                Row(
+              children: [
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: 325,
+                  child:TextField(
+                  controller: URLController,
+                  autofocus: true, // Ensures keyboard appears when screen loads
+                  decoration: InputDecoration(
+                    hintText: "Enter the URL : ",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  keyboardType: TextInputType.text,
+                )
+                ),
+                SizedBox(
+                  child:IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed: loadUrl, // Load URL when button is pressed
+                ),
+                ) 
+              ]
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width:double.infinity,
+              height: 400,
+              child: camURL!=""?WebViewWidget(controller: camURLController):Container(width: 200,height: 200, color: Colors.white, child: Text("Cam module"),),
+            )
+              ]
+            )
           ],
         ),
+      ),
       ),
     );
   }

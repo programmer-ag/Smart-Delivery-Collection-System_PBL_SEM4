@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'configure.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  // this is done in main file because the data is loaded at the start of the app and then it is used in any of the files
+  await dotenv.load(fileName: ".env"); // loading the data of the env file in the project
   runApp(const MyApp());
 }
 

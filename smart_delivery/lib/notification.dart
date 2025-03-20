@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'dashboard.dart';
-import 'history.dart';
+// import 'history.dart';
 import 'main.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -75,16 +75,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text("History"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HistoryPage()),
-                );
-              },
-            ),
+            // ListTile(
+            //   leading: const Icon(Icons.history),
+            //   title: const Text("History"),
+            //   onTap: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const HistoryPage()),
+            //     );
+            //   },
+            // ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text("Log Out"),

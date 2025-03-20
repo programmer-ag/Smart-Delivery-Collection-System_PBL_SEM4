@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dashboard.dart';
+import 'global.dart';
 import 'main.dart';
+import './Services/mqtt_services.dart';
 
 class Configure extends StatefulWidget {
   // const DashboardUI({super.key, required this.title});
@@ -13,16 +15,20 @@ class Configure extends StatefulWidget {
 }
 
 class _ConfigurePageState extends State<Configure> {
-  
+
   bool isDarkMode = false;
   Color backgroundColor = Color(0xFFAEB8FE);
   Color textColor = Color(0xFf000000);
   final TextEditingController boxIdController = TextEditingController();
   final TextEditingController personNameController = TextEditingController();
+  final TextEditingController mobileController = TextEditingController();
+
+  MqttService newclient = MqttService();
 
   @override
  Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
         title: const Row(
           children: [
@@ -54,8 +60,9 @@ class _ConfigurePageState extends State<Configure> {
         ],
       ),
       backgroundColor: backgroundColor,
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SingleChildScrollView(
+      child: Padding(
+      padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -64,40 +71,55 @@ class _ConfigurePageState extends State<Configure> {
             const SizedBox(height: 8),
             TextField(
               controller: boxIdController,
+              autofocus: true,
               decoration: InputDecoration(
                 hintText: "Enter device ID",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 filled: true,
                 fillColor: Colors.white,
               ),
-              // keyboardType: TextInputType.number,
+              keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
 
-            // Box ID Input
             Text("Person name", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
             const SizedBox(height: 8),
             TextField(
               controller: personNameController,
-              // autofocus: true, // Ensures keyboard appears when screen loads
+              autofocus: true, // Ensures keyboard appears when screen loads
               decoration: InputDecoration(
                 hintText: "Enter name of person",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 filled: true,
                 fillColor: Colors.white,
               ),
-              // keyboardType: TextInputType.text,
+              keyboardType: TextInputType.text,
             ),
-            const Spacer(),
+            const SizedBox(height: 20),
+            Text("Mobile no. : ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: mobileController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: "Enter mobile no. ",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 40),
 
             // Submit Button at the Bottom
             SizedBox(
               child: ElevatedButton(
                 onPressed: () {
-                  String boxId = boxIdController.text;
-                  String personName = personNameController.text;
-                  
-                  if (boxId.isEmpty || personName.isEmpty) {
+                  UserData().boxId = boxIdController.text;
+                  UserData().personName = personNameController.text;
+                  UserData().mobileNumber = mobileController.text;
+
+                  if (boxIdController.text.isEmpty || personNameController.text.isEmpty || mobileController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Please fill in all fields")),
                     );
@@ -108,9 +130,11 @@ class _ConfigurePageState extends State<Configure> {
                     SnackBar(content: Text("Box configured successfully!")),
                   );
 
+                  newclient.connect();
+
                   Navigator.push(    
                     context,      
-                    MaterialPageRoute(builder: (context) => const DashboardUI()),
+                    MaterialPageRoute(builder: (context) => DashboardUI()),
                   );
                 },
                 child: const Text("Configure", style: TextStyle(fontSize: 18)),
@@ -119,6 +143,7 @@ class _ConfigurePageState extends State<Configure> {
           ],
         ),
       ),
+    )
     );
   }
 }
