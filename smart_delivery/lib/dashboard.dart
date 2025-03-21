@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:async';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'profile.dart';
 import 'notification.dart';
 // import 'history.dart';
@@ -20,7 +21,8 @@ class DashboardUI extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardUI> {
   
-  bool isButtonDisabled = false;
+  bool isButtonDisabledLock = false;
+  bool isButtonDisabledFlash = false;
   bool isDarkMode = false;
   bool isLocked = true;
   bool objectDetected = false;
@@ -44,8 +46,25 @@ class _DashboardPageState extends State<DashboardUI> {
     camURLController = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.disabled)
     ..loadRequest(Uri.parse("about:blank"));
+    loadPreviousState();
     startListening(); // Start listening when the screen loads
   }
+
+//   // Restore the button state
+Future<void> loadPreviousState() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    isButtonDisabledLock = prefs.getBool('isButtonDisabledLock') ?? false;
+    isButtonDisabledFlash = prefs.getBool('isButtonDisabledFlash') ?? false;
+  });
+}
+
+// Save the button state whenever it changes
+Future<void> saveButtonState() async {
+  final prefs = await SharedPreferences.getInstance();
+  prefs.setBool('isButtonDisabledLock', isButtonDisabledLock);
+  prefs.setBool('isButtonDisabledFlash', isButtonDisabledFlash);
+}
 
   void loadUrl() {
     camURL = URLController.text;
@@ -73,10 +92,45 @@ class _DashboardPageState extends State<DashboardUI> {
                 // isLocked =false;
                 // doorStatus = "Open";
                 // lockStatus = "Unlocked";
-                isButtonDisabled = true;
+                isButtonDisabledLock = true;
               });
+              saveButtonState();
               Navigator.pop(context);
               newclient.publishMessage("servo_bool","Lock_Con");
+              // newclient.publishMessage("Ultrasonic_data","placed");
+              ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Door Opening...")),
+                  );
+            },
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void toggleFlash() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm"),
+        content: Text("Do you want to start the flash?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                // isLocked =false;
+                // doorStatus = "Open";
+                // lockStatus = "Unlocked";
+                isButtonDisabledFlash = true;
+              });
+              saveButtonState();
+              Navigator.pop(context);
+              newclient.publishMessage("flash","FCON");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Door Opening...")),
@@ -111,7 +165,7 @@ class _DashboardPageState extends State<DashboardUI> {
       if (topics == "servo_stat" && message == "Ack") {
       setState(() {
         // isLocked = false;
-        isButtonDisabled = false;
+        isButtonDisabledLock = false;
         // lockStatus = "Unlock";
         if(isLocked==true){
         isLocked = false;
@@ -122,6 +176,13 @@ class _DashboardPageState extends State<DashboardUI> {
           lockStatus = "Locked";
         }
       });
+      saveButtonState();
+    }
+    if (topics == "flash_ack" && message == "Ack") {
+      setState(() {
+        isButtonDisabledFlash = false;
+      });
+      saveButtonState();
     }
     // else {
     //   setState(() {
@@ -285,7 +346,7 @@ class _DashboardPageState extends State<DashboardUI> {
           children: [
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: isButtonDisabled ? null : toggleLock,
+              onPressed: isButtonDisabledLock ? null : toggleLock,
               style: ElevatedButton.styleFrom(
               minimumSize: Size(200, 50), // Width: 200, Height: 50
               ),  
@@ -316,6 +377,14 @@ class _DashboardPageState extends State<DashboardUI> {
                   // ),
                 ],
               ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed:  isButtonDisabledFlash ? null : toggleFlash,
+              style: ElevatedButton.styleFrom(
+              minimumSize: Size(200, 50), // Width: 200, Height: 50
+              ),  
+              child: Text("Start Flash", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
             ),
             const SizedBox(height: 20),
             Column(
