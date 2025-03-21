@@ -225,6 +225,10 @@ Future<SecurityContext> loadSecurityContext() async {
       if (client.connectionStatus!.state == MqttConnectionState.connected) {
         print('Connected to HiveMQ Cloud!');
         isConnected = true;
+        _instance.subscibe('Ultrasonic_data');
+        _instance.subscibe('servo_stat');
+        _instance.subscibe('MagCon_data');
+        _instance.subscibe('notifications');
         // client.subscribe('Ultrasonic_data', MqttQos.atMostOnce);
       } else {
         print('Failed to connect: ${client.connectionStatus}');
@@ -246,6 +250,10 @@ Future<SecurityContext> loadSecurityContext() async {
 
   void _onConnected() {
     print('MQTT Connected');
+    // _instance.subscibe('Ultrasonic_data');
+    // _instance.subscibe('servo_stat');
+    // _instance.subscibe('MagCon_data');
+    // _instance.subscibe('notifications');
   }
 
   void _onDisconnected() {
@@ -282,7 +290,7 @@ Future<SecurityContext> loadSecurityContext() async {
     }
     else
     {
-      print("MQTT not Connected");
+      print("MQTT not Connected subcribe");
     }
   }
 

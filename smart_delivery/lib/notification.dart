@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:mqtt_client/mqtt_client.dart';
 import 'profile.dart';
 import 'dashboard.dart';
 // import 'history.dart';
 import 'main.dart';
+// import './Services/mqtt_services.dart';
 
 class NotificationsPage extends StatefulWidget {
   // const DashboardUI({super.key, required this.title});
@@ -19,6 +22,37 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool isDarkMode = false;
   Color backgroundColor = Color(0xFFAEB8FE);
   Color textColor = Color(0xFf000000);
+
+  // MqttService newclient = MqttService();
+
+  List<Map<String, String>> notifications = []; // to store the notifications
+
+  @override
+  void initState() {
+    super.initState();
+    // addNotifications();
+  }
+
+//     void addNotifications() {
+//       Timer.periodic(Duration(seconds:5), (timer) {
+//       newclient.subscibe('notifications');
+//       newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
+//       final MqttPublishMessage recMessage = messages![0].payload as MqttPublishMessage;
+//       String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
+//       String topics = messages![0].topic;
+//       print('Received message: $message from topic: $topics');
+//       if(messages!=null){
+//         setState(() {
+//         notifications.insert(0,{
+//           "message": message,
+//           "timestamp": DateTime.now().toString().substring(0, 16) // Format timestamp
+//         });
+//       });
+//       }
+//       });
+
+//   });
+// }
 
   @override
   Widget build(BuildContext context) {
@@ -99,25 +133,43 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ),
       ),
       backgroundColor: backgroundColor,
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
+      // body: ListView(
+      //   padding: const EdgeInsets.all(16.0),
+      //   children: [
+      //     ListTile(
+      //       title: Text("Please collect item", style: TextStyle(color: textColor),),
+      //       trailing: Text("2025-02-17 10:30 AM", style: TextStyle(color: textColor),),
+      //     ),
+      //     ListTile(
+      //       title: Text("Item not collected since 3 days", style: TextStyle(color: textColor),),
+      //       trailing: Text("2025-02-14 09:00 AM", style: TextStyle(color: textColor),),
+      //     ),
+      //     ListTile(
+      //       title: Text("Delivery attempted", style: TextStyle(color: textColor),),
+      //       trailing: Text("2025-02-16 05:45 PM", style: TextStyle(color: textColor),),
+      //     ),
+      //     ListTile(
+      //       title: Text("Package is still inside", style: TextStyle(color: textColor),),
+      //       trailing: Text("2025-02-17 02:15 PM", style: TextStyle(color: textColor),),
+      //     ),
+      //   ],
+      // ),
+      body: Column(
         children: [
-          ListTile(
-            title: Text("Please collect item", style: TextStyle(color: textColor),),
-            trailing: Text("2025-02-17 10:30 AM", style: TextStyle(color: textColor),),
-          ),
-          ListTile(
-            title: Text("Item not collected since 3 days", style: TextStyle(color: textColor),),
-            trailing: Text("2025-02-14 09:00 AM", style: TextStyle(color: textColor),),
-          ),
-          ListTile(
-            title: Text("Delivery attempted", style: TextStyle(color: textColor),),
-            trailing: Text("2025-02-16 05:45 PM", style: TextStyle(color: textColor),),
-          ),
-          ListTile(
-            title: Text("Package is still inside", style: TextStyle(color: textColor),),
-            trailing: Text("2025-02-17 02:15 PM", style: TextStyle(color: textColor),),
-          ),
+          Expanded(child: 
+          notifications.isEmpty
+          ? Center(child: Text("No notifications yet", style: TextStyle(color: textColor)))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: notifications.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(notifications[index]["message"]!, style: TextStyle(color: textColor)),
+                  trailing: Text(notifications[index]["timestamp"]!, style: TextStyle(color: textColor)),
+                );
+              },
+            ),),
+            // ElevatedButton(onPressed: addNotifications, child: Text("Add notifications", style: TextStyle(color: textColor))),
         ],
       ),
     );

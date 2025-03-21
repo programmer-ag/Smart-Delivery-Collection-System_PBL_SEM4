@@ -70,12 +70,14 @@ class _DashboardPageState extends State<DashboardUI> {
           TextButton(
             onPressed: () {
               setState(() {
-                isLocked =false;
-                doorStatus = "Open";
+                // isLocked =false;
+                // doorStatus = "Open";
+                // lockStatus = "Unlocked";
+                isButtonDisabled = true;
               });
               Navigator.pop(context);
-              newclient.publishMessage("servo_bool","Open Lock");
-              // newclient.publishMessage("Ultrasonic_data","Placed");
+              newclient.publishMessage("servo_bool","Lock_Con");
+              // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Door Opening...")),
                   );
@@ -87,11 +89,18 @@ class _DashboardPageState extends State<DashboardUI> {
     );
   }
 
+//   newclient.onConnected = () {
+//   // print("Connected to MQTT Broker");
+//   newclient.subscibe('Ultrasonic_data');
+//   newclient.subscibe('servo_stat');
+//   newclient.subscibe('MagCon_data');
+// };
+
   void startListening() {
   Timer.periodic(Duration(seconds:5), (timer) {
-    newclient.subscibe('Ultrasonic_data');
-    newclient.subscibe('servo_stat');
-    newclient.subscibe('MagCon_data');
+    // newclient.subscibe('Ultrasonic_data');
+    // newclient.subscibe('servo_stat');
+    // newclient.subscibe('MagCon_data');
     // String? message;
     // String? topics;
       newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
@@ -99,44 +108,53 @@ class _DashboardPageState extends State<DashboardUI> {
       String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
       String topics = messages![0].topic;
       print('Received message: $message from topic: $topics');
-      if (topics == "servo_stat" && message == "Closed") {
+      if (topics == "servo_stat" && message == "Ack") {
+      setState(() {
+        // isLocked = false;
+        isButtonDisabled = false;
+        // lockStatus = "Unlock";
+        if(isLocked==true){
+        isLocked = false;
+        lockStatus = "Unlock";
+        }
+        else{
+          isLocked = true;
+          lockStatus = "Locked";
+        }
+      });
+    }
+    // else {
+    //   setState(() {
+    //     // isLocked = false;
+    //     isButtonDisabled = true;
+    //     // doorStatus = "Open";
+    //   });
+    // }
+    if (topics == "MagCon_data" && message == "close") {
       setState(() {
         // isLocked = true;
-        isButtonDisabled = false;
+        // isButtonDisabled = false;
+        // lockStatus = "Locked";
         doorStatus = "Closed";
       });
     }
-    if (topics == "servo_stat" && message == "Open") {
+    if (topics == "MagCon_data" && message == "open") {
       setState(() {
         // isLocked = false;
-        isButtonDisabled = true;
+        // isButtonDisabled = true;
+        // lockStatus = "Unlocked";
         doorStatus = "Open";
       });
     }
-    if (topics == "MagCon_data" && message == "Locked") {
-      setState(() {
-        isLocked = true;
-        // isButtonDisabled = false;
-        lockStatus = "Locked";
-      });
-    }
-    if (topics == "MagCon_data" && message == "Unlocked") {
-      setState(() {
-        isLocked = false;
-        // isButtonDisabled = true;
-        lockStatus = "Unlocked";
-      });
-    }
-    if (topics == "Ultrasonic_data" && message == "Placed") {
+    if (topics == "Ultrasonic_data" && message == "placed") {
       setState(() {
         parcelStatus = "Placed";
       });
-      print(parcelStatus);
-      Future.delayed(Duration(seconds: 10), () {
+    }
+    if (topics == "Ultrasonic_data" && message == "unplaced") {
       setState(() {
-        parcelStatus = "Not Placed"; // Enable the button
+        parcelStatus = "Unplaced";
       });
-    });
     }
       });
     // String doorMessage = newclient.subscibe("servo_bool");
@@ -284,7 +302,7 @@ class _DashboardPageState extends State<DashboardUI> {
                   _buildStatusCard(
                     icon: isLocked ? Icons.lock : Icons.lock_open,
                     label: "Lock Status",
-                    value: "Door : $doorStatus \n Latch : $lockStatus",
+                    value: "Door : $doorStatus \nLatch : $lockStatus",
                   ),
                   _buildStatusCard(
                     icon: Icons.inbox,
