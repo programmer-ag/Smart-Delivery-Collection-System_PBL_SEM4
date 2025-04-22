@@ -203,7 +203,10 @@ Future<SecurityContext> loadSecurityContext() async {
     client.securityContext =  await loadSecurityContext(); // Load custom TLS
 
     // Set keep-alive interval
-    client.keepAlivePeriod = 20;
+    client.keepAlivePeriod = 60;
+
+    // Set auto-reconnect
+    client.autoReconnect = true;
 
     // Set auto-reconnect on disconnect
     client.onDisconnected = _onDisconnected;
@@ -229,6 +232,7 @@ Future<SecurityContext> loadSecurityContext() async {
         _instance.subscibe('servo_stat');
         _instance.subscibe('MagCon_data');
         _instance.subscibe('notifications');
+        _instance.subscibe('flash_ack');
         // client.subscribe('Ultrasonic_data', MqttQos.atMostOnce);
       } else {
         print('Failed to connect: ${client.connectionStatus}');

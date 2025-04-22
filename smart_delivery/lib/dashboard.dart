@@ -24,11 +24,12 @@ class _DashboardPageState extends State<DashboardUI> {
   bool isButtonDisabledLock = false;
   bool isButtonDisabledFlash = false;
   bool isDarkMode = false;
-  bool isLocked = true;
+  bool isLocked = false;
+  bool isFlashOn = false;
   bool objectDetected = false;
   double objectWeight = 0.0;
-  String doorStatus = "Closed";
-  String lockStatus = "Locked";
+  String doorStatus = "Open";
+  String lockStatus = "Unlocked";
   String parcelStatus = "Not Placed";
   String camURL = "";
   Color backgroundColor = Color(0xFFAEB8FE);
@@ -80,7 +81,7 @@ Future<void> saveButtonState() async {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm"),
-        content: Text("Do you want to open the lock?"),
+          content: Text("Do you want to ${isLocked ? 'Unlock' : 'Lock'} the lock?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -99,7 +100,7 @@ Future<void> saveButtonState() async {
               newclient.publishMessage("servo_bool","Lock_Con");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Door Opening...")),
+                    SnackBar(content: Text(isLocked ? "Unlocking the lock ...." : "Locking the lock ....")),
                   );
             },
             child: const Text("Yes"),
@@ -114,7 +115,7 @@ Future<void> saveButtonState() async {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm"),
-        content: Text("Do you want to start the flash?"),
+        content: Text("Do you want to ${isFlashOn ? 'Stop' : 'Start'} the flash?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -126,6 +127,7 @@ Future<void> saveButtonState() async {
                 // isLocked =false;
                 // doorStatus = "Open";
                 // lockStatus = "Unlocked";
+                isFlashOn = isFlashOn ? false : true;
                 isButtonDisabledFlash = true;
               });
               saveButtonState();
@@ -133,7 +135,7 @@ Future<void> saveButtonState() async {
               newclient.publishMessage("flash","FCON");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Door Opening...")),
+                    SnackBar(content: Text(isFlashOn ? "Starting flash ...." : "Stopping flash ....")),  
                   );
             },
             child: const Text("Yes"),
@@ -150,8 +152,16 @@ Future<void> saveButtonState() async {
 //   newclient.subscibe('MagCon_data');
 // };
 
+  void enableBtn(){
+    setState(() {
+      isButtonDisabledFlash = false;
+      isButtonDisabledLock = false;
+    });
+    saveButtonState();
+  }
+
   void startListening() {
-  Timer.periodic(Duration(seconds:5), (timer) {
+  Timer.periodic(Duration(seconds:1), (timer) {
     // newclient.subscibe('Ultrasonic_data');
     // newclient.subscibe('servo_stat');
     // newclient.subscibe('MagCon_data');
@@ -350,7 +360,7 @@ Future<void> saveButtonState() async {
               style: ElevatedButton.styleFrom(
               minimumSize: Size(200, 50), // Width: 200, Height: 50
               ),  
-              child: Text("Open Lock", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
+              child: Text(isLocked ? "Open Lock" : "Close Lock", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
             ),
             const SizedBox(height: 40),
             Text("Box Status", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
@@ -384,7 +394,7 @@ Future<void> saveButtonState() async {
               style: ElevatedButton.styleFrom(
               minimumSize: Size(200, 50), // Width: 200, Height: 50
               ),  
-              child: Text("Start Flash", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
+              child: Text(isFlashOn ? "Stop Flash" : "Start Flash", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
             ),
             const SizedBox(height: 20),
             Column(
@@ -422,7 +432,9 @@ Future<void> saveButtonState() async {
               child: camURL!=""?WebViewWidget(controller: camURLController):Container(width: 200,height: 200, color: Colors.white, child: Text("Cam module"),),
             )
               ]
-            )
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: enableBtn, child: Text("Enable")),
           ],
         ),
       ),
