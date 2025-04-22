@@ -5,7 +5,7 @@ import 'profile.dart';
 import 'dashboard.dart';
 // import 'history.dart';
 import 'main.dart';
-// import './Services/mqtt_services.dart';
+import './Services/mqtt_services.dart';
 
 class NotificationsPage extends StatefulWidget {
   // const DashboardUI({super.key, required this.title});
@@ -23,36 +23,40 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Color backgroundColor = Color(0xFFAEB8FE);
   Color textColor = Color(0xFf000000);
 
-  // MqttService newclient = MqttService();
+  MqttService newclient = MqttService();
 
-  List<Map<String, String>> notifications = []; // to store the notifications
+  List<Map<String, String>> notification = []; // to store the notifications
 
   @override
   void initState() {
     super.initState();
-    // addNotifications();
+    addNotifications();
   }
 
-//     void addNotifications() {
-//       Timer.periodic(Duration(seconds:5), (timer) {
-//       newclient.subscibe('notifications');
-//       newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
-//       final MqttPublishMessage recMessage = messages![0].payload as MqttPublishMessage;
-//       String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
-//       String topics = messages![0].topic;
-//       print('Received message: $message from topic: $topics');
-//       if(messages!=null){
-//         setState(() {
-//         notifications.insert(0,{
-//           "message": message,
-//           "timestamp": DateTime.now().toString().substring(0, 16) // Format timestamp
-//         });
-//       });
-//       }
-//       });
+    void addNotifications() {
+      Timer.periodic(Duration(seconds:5), (timer) {
+      // newclient.subscibe('notifications');
+      newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
+      final MqttPublishMessage recMessage = messages![0].payload as MqttPublishMessage;
+      String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
+      String topics = messages![0].topic;
+      print('Received message: $message from topic: $topics');
+      if(messages!=null){
+        setState(() {
+        notification.insert(0,{
+          "message": message,
+          "timestamp": DateTime.now().toString().substring(0, 16) // Format timestamp
+        });
+      });
+      }
+      });
 
-//   });
-// }
+  });
+}
+
+  void clearNotifications(){
+    notification.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,19 +161,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
       body: Column(
         children: [
           Expanded(child: 
-          notifications.isEmpty
+          notification.isEmpty
           ? Center(child: Text("No notifications yet", style: TextStyle(color: textColor)))
           : ListView.builder(
               padding: const EdgeInsets.all(16.0),
-              itemCount: notifications.length,
+              itemCount: notification.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(notifications[index]["message"]!, style: TextStyle(color: textColor)),
-                  trailing: Text(notifications[index]["timestamp"]!, style: TextStyle(color: textColor)),
+                  title: Text(notification[index]["message"]!, style: TextStyle(color: textColor)),
+                  trailing: Text(notification[index]["timestamp"]!, style: TextStyle(color: textColor)),
                 );
               },
             ),),
-            // ElevatedButton(onPressed: addNotifications, child: Text("Add notifications", style: TextStyle(color: textColor))),
+            ElevatedButton(onPressed: clearNotifications, child: Text("Clear Notifications")),
         ],
       ),
     );

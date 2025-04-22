@@ -23,11 +23,12 @@ class _DashboardPageState extends State<DashboardUI> {
   bool isButtonDisabledLock = false;
   bool isButtonDisabledFlash = false;
   bool isDarkMode = false;
-  bool isLocked = true;
+  bool isLocked = false;
+  bool isFlashOn = false;
   bool objectDetected = false;
   double objectWeight = 0.0;
-  String doorStatus = "Closed";
-  String lockStatus = "Locked";
+  String doorStatus = "Open";
+  String lockStatus = "Unlocked";
   String parcelStatus = "Not Placed";
   String camURL = "";
   Color backgroundColor = Color(0xFFAEB8FE);
@@ -80,7 +81,7 @@ class _DashboardPageState extends State<DashboardUI> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm"),
-        content: Text("Do you want to open the lock?"),
+          content: Text("Do you want to ${isLocked ? 'Unlock' : 'Lock'} the lock?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -99,8 +100,13 @@ class _DashboardPageState extends State<DashboardUI> {
               newclient.publishMessage("servo_bool", "Lock_Con");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
+<<<<<<< HEAD
                 SnackBar(content: Text("Door Opening...")),
               );
+=======
+                    SnackBar(content: Text(isLocked ? "Unlocking the lock ...." : "Locking the lock ....")),
+                  );
+>>>>>>> 146bdec12fa88471d0ebb347d2a3844c8827634e
             },
             child: const Text("Yes"),
           ),
@@ -114,7 +120,7 @@ class _DashboardPageState extends State<DashboardUI> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm"),
-        content: Text("Do you want to start the flash?"),
+        content: Text("Do you want to ${isFlashOn ? 'Stop' : 'Start'} the flash?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -126,6 +132,7 @@ class _DashboardPageState extends State<DashboardUI> {
                 // isLocked =false;
                 // doorStatus = "Open";
                 // lockStatus = "Unlocked";
+                isFlashOn = isFlashOn ? false : true;
                 isButtonDisabledFlash = true;
               });
               saveButtonState();
@@ -133,8 +140,13 @@ class _DashboardPageState extends State<DashboardUI> {
               newclient.publishMessage("flash", "FCON");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
+<<<<<<< HEAD
                 SnackBar(content: Text("Door Opening...")),
               );
+=======
+                    SnackBar(content: Text(isFlashOn ? "Starting flash ...." : "Stopping flash ....")),  
+                  );
+>>>>>>> 146bdec12fa88471d0ebb347d2a3844c8827634e
             },
             child: const Text("Yes"),
           ),
@@ -150,7 +162,16 @@ class _DashboardPageState extends State<DashboardUI> {
 //   newclient.subscibe('MagCon_data');
 // };
 
+  void enableBtn(){
+    setState(() {
+      isButtonDisabledFlash = false;
+      isButtonDisabledLock = false;
+    });
+    saveButtonState();
+  }
+
   void startListening() {
+<<<<<<< HEAD
     Timer.periodic(Duration(seconds: 5), (timer) {
       // newclient.subscibe('Ultrasonic_data');
       // newclient.subscibe('servo_stat');
@@ -179,6 +200,27 @@ class _DashboardPageState extends State<DashboardUI> {
             }
           });
           saveButtonState();
+=======
+  Timer.periodic(Duration(seconds:1), (timer) {
+    // newclient.subscibe('Ultrasonic_data');
+    // newclient.subscibe('servo_stat');
+    // newclient.subscibe('MagCon_data');
+    // String? message;
+    // String? topics;
+      newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
+      final MqttPublishMessage recMessage = messages![0].payload as MqttPublishMessage;
+      String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
+      String topics = messages![0].topic;
+      print('Received message: $message from topic: $topics');
+      if (topics == "servo_stat" && message == "Ack") {
+      setState(() {
+        // isLocked = false;
+        isButtonDisabledLock = false;
+        // lockStatus = "Unlock";
+        if(isLocked==true){
+        isLocked = false;
+        lockStatus = "Unlock";
+>>>>>>> 146bdec12fa88471d0ebb347d2a3844c8827634e
         }
         if (topics == "flash_ack" && message == "Ack") {
           setState(() {
@@ -344,6 +386,7 @@ class _DashboardPageState extends State<DashboardUI> {
       ),
       backgroundColor: backgroundColor,
       body: SingleChildScrollView(
+<<<<<<< HEAD
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -434,6 +477,61 @@ class _DashboardPageState extends State<DashboardUI> {
                   )
                 ]),
                 const SizedBox(height: 20),
+=======
+      child:Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: isButtonDisabledLock ? null : toggleLock,
+              style: ElevatedButton.styleFrom(
+              minimumSize: Size(200, 50), // Width: 200, Height: 50
+              ),  
+              child: Text(isLocked ? "Open Lock" : "Close Lock", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
+            ),
+            const SizedBox(height: 40),
+            Text("Box Status", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 200,
+              child: GridView.count(
+                crossAxisCount: 2,
+                children: [
+                  _buildStatusCard(
+                    icon: isLocked ? Icons.lock : Icons.lock_open,
+                    label: "Lock Status",
+                    value: "Door : $doorStatus \nLatch : $lockStatus",
+                  ),
+                  _buildStatusCard(
+                    icon: Icons.inbox,
+                    label: "Object Detection",
+                    value: parcelStatus,
+                  ),
+                  // _buildStatusCard(
+                  //   icon: Icons.scale,
+                  //   label: "Object Weight",
+                  //   value: objectWeight == 0.0 ? "0 Kg" : "$objectWeight Kg",
+                  // ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed:  isButtonDisabledFlash ? null : toggleFlash,
+              style: ElevatedButton.styleFrom(
+              minimumSize: Size(200, 50), // Width: 200, Height: 50
+              ),  
+              child: Text(isFlashOn ? "Stop Flash" : "Start Flash", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
+            ),
+            const SizedBox(height: 20),
+            Column(
+              children: [
+               Text("Cam Module URL : ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+                Row(
+              children: [
+                const SizedBox(height: 8),
+>>>>>>> 146bdec12fa88471d0ebb347d2a3844c8827634e
                 SizedBox(
                   width: double.infinity,
                   height: 400,
@@ -446,9 +544,32 @@ class _DashboardPageState extends State<DashboardUI> {
                           child: Text("Cam module"),
                         ),
                 )
+<<<<<<< HEAD
               ])
             ],
           ),
+=======
+                ),
+                SizedBox(
+                  child:IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed: loadUrl, // Load URL when button is pressed
+                ),
+                ) 
+              ]
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width:double.infinity,
+              height: 400,
+              child: camURL!=""?WebViewWidget(controller: camURLController):Container(width: 200,height: 200, color: Colors.white, child: Text("Cam module"),),
+            )
+              ]
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: enableBtn, child: Text("Enable")),
+          ],
+>>>>>>> 146bdec12fa88471d0ebb347d2a3844c8827634e
         ),
       ),
     );
