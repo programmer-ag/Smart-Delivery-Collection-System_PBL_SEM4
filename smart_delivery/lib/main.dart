@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:smart_delivery/firebase_options.dart';
 import 'configure.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   // this is done in main file because the data is loaded at the start of the app and then it is used in any of the files
-  await dotenv.load(fileName: ".env"); // loading the data of the env file in the project
+  await dotenv.load(
+      fileName: ".env"); // loading the data of the env file in the project
   runApp(const MyApp());
 }
 
@@ -43,7 +49,8 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: const Text(
           "Smart Delivery",
-          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF110B11),
         centerTitle: true,
@@ -80,8 +87,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  textStyle: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                   backgroundColor: Color(0xFF110B11),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(

@@ -20,7 +20,6 @@ class DashboardUI extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardUI> {
-  
   bool isButtonDisabledLock = false;
   bool isButtonDisabledFlash = false;
   bool isDarkMode = false;
@@ -44,34 +43,35 @@ class _DashboardPageState extends State<DashboardUI> {
   void initState() {
     super.initState();
     camURLController = WebViewController()
-    ..setJavaScriptMode(JavaScriptMode.disabled)
-    ..loadRequest(Uri.parse("about:blank"));
+      ..setJavaScriptMode(JavaScriptMode.disabled)
+      ..loadRequest(Uri.parse("about:blank"));
     loadPreviousState();
     startListening(); // Start listening when the screen loads
   }
 
 //   // Restore the button state
-Future<void> loadPreviousState() async {
-  final prefs = await SharedPreferences.getInstance();
-  setState(() {
-    isButtonDisabledLock = prefs.getBool('isButtonDisabledLock') ?? false;
-    isButtonDisabledFlash = prefs.getBool('isButtonDisabledFlash') ?? false;
-  });
-}
+  Future<void> loadPreviousState() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isButtonDisabledLock = prefs.getBool('isButtonDisabledLock') ?? false;
+      isButtonDisabledFlash = prefs.getBool('isButtonDisabledFlash') ?? false;
+    });
+  }
 
 // Save the button state whenever it changes
-Future<void> saveButtonState() async {
-  final prefs = await SharedPreferences.getInstance();
-  prefs.setBool('isButtonDisabledLock', isButtonDisabledLock);
-  prefs.setBool('isButtonDisabledFlash', isButtonDisabledFlash);
-}
+  Future<void> saveButtonState() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('isButtonDisabledLock', isButtonDisabledLock);
+    prefs.setBool('isButtonDisabledFlash', isButtonDisabledFlash);
+  }
 
   void loadUrl() {
     camURL = URLController.text;
-    if(camURL != ""){
+    if (camURL != "") {
       setState(() {
-      camURLController.loadRequest(Uri.parse(camURL)); // Load the URL in WebView
-    });
+        camURLController
+            .loadRequest(Uri.parse(camURL)); // Load the URL in WebView
+      });
     }
   }
 
@@ -96,11 +96,11 @@ Future<void> saveButtonState() async {
               });
               saveButtonState();
               Navigator.pop(context);
-              newclient.publishMessage("servo_bool","Lock_Con");
+              newclient.publishMessage("servo_bool", "Lock_Con");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Door Opening...")),
-                  );
+                SnackBar(content: Text("Door Opening...")),
+              );
             },
             child: const Text("Yes"),
           ),
@@ -130,11 +130,11 @@ Future<void> saveButtonState() async {
               });
               saveButtonState();
               Navigator.pop(context);
-              newclient.publishMessage("flash","FCON");
+              newclient.publishMessage("flash", "FCON");
               // newclient.publishMessage("Ultrasonic_data","placed");
               ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Door Opening...")),
-                  );
+                SnackBar(content: Text("Door Opening...")),
+              );
             },
             child: const Text("Yes"),
           ),
@@ -151,102 +151,104 @@ Future<void> saveButtonState() async {
 // };
 
   void startListening() {
-  Timer.periodic(Duration(seconds:5), (timer) {
-    // newclient.subscibe('Ultrasonic_data');
-    // newclient.subscibe('servo_stat');
-    // newclient.subscibe('MagCon_data');
-    // String? message;
-    // String? topics;
-      newclient.client.updates!.listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
-      final MqttPublishMessage recMessage = messages![0].payload as MqttPublishMessage;
-      String message = MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
-      String topics = messages![0].topic;
-      print('Received message: $message from topic: $topics');
-      if (topics == "servo_stat" && message == "Ack") {
-      setState(() {
-        // isLocked = false;
-        isButtonDisabledLock = false;
-        // lockStatus = "Unlock";
-        if(isLocked==true){
-        isLocked = false;
-        lockStatus = "Unlock";
+    Timer.periodic(Duration(seconds: 5), (timer) {
+      // newclient.subscibe('Ultrasonic_data');
+      // newclient.subscibe('servo_stat');
+      // newclient.subscibe('MagCon_data');
+      // String? message;
+      // String? topics;
+      newclient.client.updates!
+          .listen((List<MqttReceivedMessage<MqttMessage>>? messages) {
+        final MqttPublishMessage recMessage =
+            messages![0].payload as MqttPublishMessage;
+        String message = MqttPublishPayload.bytesToStringAsString(
+            recMessage.payload.message);
+        String topics = messages![0].topic;
+        print('Received message: $message from topic: $topics');
+        if (topics == "servo_stat" && message == "Ack") {
+          setState(() {
+            // isLocked = false;
+            isButtonDisabledLock = false;
+            // lockStatus = "Unlock";
+            if (isLocked == true) {
+              isLocked = false;
+              lockStatus = "Unlock";
+            } else {
+              isLocked = true;
+              lockStatus = "Locked";
+            }
+          });
+          saveButtonState();
         }
-        else{
-          isLocked = true;
-          lockStatus = "Locked";
+        if (topics == "flash_ack" && message == "Ack") {
+          setState(() {
+            isButtonDisabledFlash = false;
+          });
+          saveButtonState();
+        }
+        // else {
+        //   setState(() {
+        //     // isLocked = false;
+        //     isButtonDisabled = true;
+        //     // doorStatus = "Open";
+        //   });
+        // }
+        if (topics == "MagCon_data" && message == "close") {
+          setState(() {
+            // isLocked = true;
+            // isButtonDisabled = false;
+            // lockStatus = "Locked";
+            doorStatus = "Closed";
+          });
+        }
+        if (topics == "MagCon_data" && message == "open") {
+          setState(() {
+            // isLocked = false;
+            // isButtonDisabled = true;
+            // lockStatus = "Unlocked";
+            doorStatus = "Open";
+          });
+        }
+        if (topics == "Ultrasonic_data" && message == "placed") {
+          setState(() {
+            parcelStatus = "Placed";
+          });
+        }
+        if (topics == "Ultrasonic_data" && message == "unplaced") {
+          setState(() {
+            parcelStatus = "Unplaced";
+          });
         }
       });
-      saveButtonState();
-    }
-    if (topics == "flash_ack" && message == "Ack") {
-      setState(() {
-        isButtonDisabledFlash = false;
-      });
-      saveButtonState();
-    }
-    // else {
-    //   setState(() {
-    //     // isLocked = false;
-    //     isButtonDisabled = true;
-    //     // doorStatus = "Open";
-    //   });
-    // }
-    if (topics == "MagCon_data" && message == "close") {
-      setState(() {
-        // isLocked = true;
-        // isButtonDisabled = false;
-        // lockStatus = "Locked";
-        doorStatus = "Closed";
-      });
-    }
-    if (topics == "MagCon_data" && message == "open") {
-      setState(() {
-        // isLocked = false;
-        // isButtonDisabled = true;
-        // lockStatus = "Unlocked";
-        doorStatus = "Open";
-      });
-    }
-    if (topics == "Ultrasonic_data" && message == "placed") {
-      setState(() {
-        parcelStatus = "Placed";
-      });
-    }
-    if (topics == "Ultrasonic_data" && message == "unplaced") {
-      setState(() {
-        parcelStatus = "Unplaced";
-      });
-    }
-      });
-    // String doorMessage = newclient.subscibe("servo_bool");
-    // String parcelMessage = newclient.subscibe("Ultrasonic_data");
-    // if (topics == "servo_bool" && message == "Lock closed") {
-    //   setState(() {
-    //     isLocked = true;
-    //     doorStatus = "Closed";
-    //   });
-    // }
-    // else
-    // {
-    //   print("Some error");
-    // }
-    // if (topics == "Ultrasonic_data" && message == "Placed") {
-    //   setState(() {
-    //     parcelStatus = "Placed";
-    //   });
-    //   print(parcelStatus);
-    // //   Future.delayed(Duration(seconds: 5), () {
-    // //   setState(() {
-    // //     parcelStatus = "Not Placed"; // Enable the button
-    // //   });
-    // // });
-    // }
-    // else
-    // {
-    //   print("Some error");
-    // }
-  });
-}
+      // String doorMessage = newclient.subscibe("servo_bool");
+      // String parcelMessage = newclient.subscibe("Ultrasonic_data");
+      // if (topics == "servo_bool" && message == "Lock closed") {
+      //   setState(() {
+      //     isLocked = true;
+      //     doorStatus = "Closed";
+      //   });
+      // }
+      // else
+      // {
+      //   print("Some error");
+      // }
+      // if (topics == "Ultrasonic_data" && message == "Placed") {
+      //   setState(() {
+      //     parcelStatus = "Placed";
+      //   });
+      //   print(parcelStatus);
+      // //   Future.delayed(Duration(seconds: 5), () {
+      // //   setState(() {
+      // //     parcelStatus = "Not Placed"; // Enable the button
+      // //   });
+      // // });
+      // }
+      // else
+      // {
+      //   print("Some error");
+      // }
+    });
+  }
 
   // while(true){ {
   //   String message = newclient.subscibe("servo_bool");
@@ -260,13 +262,13 @@ Future<void> saveButtonState() async {
   // }
 
   @override
- Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         title: const Row(
@@ -282,7 +284,8 @@ Future<void> saveButtonState() async {
             onPressed: () {
               setState(() {
                 isDarkMode = !isDarkMode;
-                backgroundColor = isDarkMode ? Color(0xff110b11) : Color(0xFFAEB8FE);
+                backgroundColor =
+                    isDarkMode ? Color(0xff110b11) : Color(0xFFAEB8FE);
                 textColor = isDarkMode ? Color(0xffffffff) : Color(0xFF000000);
               });
             },
@@ -321,7 +324,8 @@ Future<void> saveButtonState() async {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const NotificationsPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const NotificationsPage()),
                 );
               },
             ),
@@ -340,97 +344,118 @@ Future<void> saveButtonState() async {
       ),
       backgroundColor: backgroundColor,
       body: SingleChildScrollView(
-      child:Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isButtonDisabledLock ? null : toggleLock,
-              style: ElevatedButton.styleFrom(
-              minimumSize: Size(200, 50), // Width: 200, Height: 50
-              ),  
-              child: Text("Open Lock", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
-            ),
-            const SizedBox(height: 40),
-            Text("Box Status", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 200,
-              child: GridView.count(
-                crossAxisCount: 2,
-                children: [
-                  _buildStatusCard(
-                    icon: isLocked ? Icons.lock : Icons.lock_open,
-                    label: "Lock Status",
-                    value: "Door : $doorStatus \nLatch : $lockStatus",
-                  ),
-                  _buildStatusCard(
-                    icon: Icons.inbox,
-                    label: "Object Detection",
-                    value: parcelStatus,
-                  ),
-                  // _buildStatusCard(
-                  //   icon: Icons.scale,
-                  //   label: "Object Weight",
-                  //   value: objectWeight == 0.0 ? "0 Kg" : "$objectWeight Kg",
-                  // ),
-                ],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isButtonDisabledLock ? null : toggleLock,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(200, 50), // Width: 200, Height: 50
+                ),
+                child: Text("Open Lock",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: textColor)),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed:  isButtonDisabledFlash ? null : toggleFlash,
-              style: ElevatedButton.styleFrom(
-              minimumSize: Size(200, 50), // Width: 200, Height: 50
-              ),  
-              child: Text("Start Flash", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: textColor)),
-            ),
-            const SizedBox(height: 20),
-            Column(
-              children: [
-               Text("Cam Module URL : ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
-                Row(
-              children: [
-                const SizedBox(height: 8),
+              const SizedBox(height: 40),
+              Text("Box Status",
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor)),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 200,
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  children: [
+                    _buildStatusCard(
+                      icon: isLocked ? Icons.lock : Icons.lock_open,
+                      label: "Lock Status",
+                      value: "Door : $doorStatus \nLatch : $lockStatus",
+                    ),
+                    _buildStatusCard(
+                      icon: Icons.inbox,
+                      label: "Object Detection",
+                      value: parcelStatus,
+                    ),
+                    // _buildStatusCard(
+                    //   icon: Icons.scale,
+                    //   label: "Object Weight",
+                    //   value: objectWeight == 0.0 ? "0 Kg" : "$objectWeight Kg",
+                    // ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isButtonDisabledFlash ? null : toggleFlash,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(200, 50), // Width: 200, Height: 50
+                ),
+                child: Text("Start Flash",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: textColor)),
+              ),
+              const SizedBox(height: 20),
+              Column(children: [
+                Text("Cam Module URL : ",
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor)),
+                Row(children: [
+                  const SizedBox(height: 8),
+                  SizedBox(
+                      width: 325,
+                      child: TextField(
+                        controller: URLController,
+                        autofocus:
+                            true, // Ensures keyboard appears when screen loads
+                        decoration: InputDecoration(
+                          hintText: "Enter the URL : ",
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        keyboardType: TextInputType.text,
+                      )),
+                  SizedBox(
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_forward),
+                      onPressed: loadUrl, // Load URL when button is pressed
+                    ),
+                  )
+                ]),
+                const SizedBox(height: 20),
                 SizedBox(
-                  width: 325,
-                  child:TextField(
-                  controller: URLController,
-                  autofocus: true, // Ensures keyboard appears when screen loads
-                  decoration: InputDecoration(
-                    hintText: "Enter the URL : ",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  keyboardType: TextInputType.text,
+                  width: double.infinity,
+                  height: 400,
+                  child: camURL != ""
+                      ? WebViewWidget(controller: camURLController)
+                      : Container(
+                          width: 200,
+                          height: 200,
+                          color: Colors.white,
+                          child: Text("Cam module"),
+                        ),
                 )
-                ),
-                SizedBox(
-                  child:IconButton(
-                  icon: Icon(Icons.arrow_forward),
-                  onPressed: loadUrl, // Load URL when button is pressed
-                ),
-                ) 
-              ]
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width:double.infinity,
-              height: 400,
-              child: camURL!=""?WebViewWidget(controller: camURLController):Container(width: 200,height: 200, color: Colors.white, child: Text("Cam module"),),
-            )
-              ]
-            )
-          ],
+              ])
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
-  Widget _buildStatusCard({required IconData icon, required String label, required String value}) {
+  Widget _buildStatusCard(
+      {required IconData icon, required String label, required String value}) {
     return Card(
       elevation: 4,
       child: Column(

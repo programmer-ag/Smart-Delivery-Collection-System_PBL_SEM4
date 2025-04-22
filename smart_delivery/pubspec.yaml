@@ -38,11 +38,17 @@ dependencies:
   flutter_dotenv: ^5.2.1
   # to handle local data 
   shared_preferences: ^2.5.2
+   # Firebase core – required for any Firebase integration
+  firebase_core: ^2.24.0
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  firebase_messaging: ^14.7.10
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.17.5
+  flutter_local_notifications: ^19.1.0
 
 dev_dependencies:
   flutter_test:
